@@ -768,7 +768,12 @@ function previewImport() {
   btn.disabled=true;
   logMsg('⏳ กำลังอ่านไฟล์ กรุณารอสักครู่...');
   const reader=new FileReader();
-  reader.onerror=function(){btn.disabled=false;logMsg('❌ อ่านไฟล์ไม่ได้','err');};
+  reader.onerror=function(){
+    btn.disabled=false;
+    const err=reader.error;
+    logMsg('❌ อ่านไฟล์ไม่ได้'+(err?` (${err.name})`:''),'err');
+    logMsg('👉 ปิดไฟล์ใน Excel ก่อน, ถ้าไฟล์อยู่ใน OneDrive/Google Drive ให้คัดลอกมาไว้ในเครื่อง (เช่น Desktop) แล้วเลือกไฟล์ใหม่อีกครั้ง','warn');
+  };
   reader.onload=function(e){
     // ให้ข้อความ "กำลังอ่านไฟล์" แสดงก่อนเริ่มประมวลผล
     setTimeout(()=>{try{parseWorkbook(e.target.result);}finally{btn.disabled=false;}},30);
