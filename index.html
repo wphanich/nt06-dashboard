@@ -763,16 +763,42 @@ function resetImport() {
 
 function previewImport() {
   if(!selectedFile){logMsg('กรุณาเลือกไฟล์ก่อน','err');return;}
+  if(typeof XLSX==='undefined'){logMsg('❌ โหลดตัวอ่านไฟล์ Excel ไม่สำเร็จ (ตรวจสอบอินเทอร์เน็ต แล้วกด Refresh)','err');return;}
+  const btn=document.getElementById('btn-preview');
+  btn.disabled=true;
+  logMsg('⏳ กำลังอ่านไฟล์ กรุณารอสักครู่...');
   const reader=new FileReader();
+  reader.onerror=function(){btn.disabled=false;logMsg('❌ อ่านไฟล์ไม่ได้','err');};
   reader.onload=function(e){
+    // ให้ข้อความ "กำลังอ่านไฟล์" แสดงก่อนเริ่มประมวลผล
+    setTimeout(()=>{try{parseWorkbook(e.target.result);}finally{btn.disabled=false;}},30);
+  };
+  reader.readAsArrayBuffer(selectedFile);
+}
+
+// ช่วงข้อมูลของชีทอาจถูกตั้งไว้ใหญ่เกินจริง (เช่น จัดรูปแบบทั้งคอลัมน์) ทำให้อ่านช้ามาก
+// จึงคำนวณช่วงใหม่จากเซลล์ที่มีอยู่จริง
+function trimSheetRange(ws) {
+  let maxR=0,maxC=0;
+  for(const k in ws){
+    if(k[0]==='!')continue;
+    const a=XLSX.utils.decode_cell(k);
+    if(a.r>maxR)maxR=a.r;
+    if(a.c>maxC)maxC=a.c;
+  }
+  ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:maxR,c:maxC}});
+}
+
+function parseWorkbook(data) {
     try {
-      const wb=XLSX.read(e.target.result,{type:'binary',cellDates:true});
+      const wb=XLSX.read(data,{type:'array',cellDates:true});
       logMsg(`📊 พบ ${wb.SheetNames.length} ชีท: ${wb.SheetNames.join(', ')}`,'ok');
       const parsed={};
       let totalPending=0;
       for(const sName of wb.SheetNames){
         if(!sName.match(/นต0[0-9]+/))continue;
         const ws=wb.Sheets[sName];
+        trimSheetRange(ws);
         const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
         if(rows.length<2)continue;
         const pending=[];
@@ -817,6 +843,7 @@ function previewImport() {
         totalPending+=pending.length;
         logMsg(`  ✅ ${sName}: ${pending.length} รายการค้าง`,'ok');
       }
+      if(!Object.keys(parsed).length){logMsg('⚠️ ไม่พบชีทที่ชื่อขึ้นต้นด้วย "นต0" (เช่น นต061)','warn');return;}
       if(totalPending===0){logMsg('⚠️ ไม่พบรายการค้าง (คอลัมน์ N ว่าง)','warn');return;}
       logMsg(`📋 รวม: ${totalPending} รายการค้างทั้งหมด`,'ok');
       pendingImportData=parsed;
@@ -824,8 +851,6 @@ function previewImport() {
     } catch(err){
       logMsg('❌ เกิดข้อผิดพลาด: '+err.message,'err');
     }
-  };
-  reader.readAsBinaryString(selectedFile);
 }
 
 function confirmImport() {
