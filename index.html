@@ -239,15 +239,16 @@ td{padding:10px 13px;vertical-align:middle;max-width:260px;}
       <!-- Controls -->
       <div class="import-controls">
         <div>
+          <label>ปีงบประมาณ</label>
+          <select id="import-fy" onchange="populateImportMonths()">
+            <option value="2569">ปีงบประมาณ 2569 (ต.ค. 2568 – ก.ย. 2569)</option>
+            <option value="2570">ปีงบประมาณ 2570 (ต.ค. 2569 – ก.ย. 2570)</option>
+          </select>
+        </div>
+        <div>
           <label>เดือน/ปีภาษี ที่นำเข้า</label>
           <select id="import-month">
             <option value="">— เลือกเดือนภาษี —</option>
-            <option value="มีนาคม 2569">มีนาคม 2569</option>
-            <option value="เมษายน 2569">เมษายน 2569</option>
-            <option value="พฤษภาคม 2569">พฤษภาคม 2569</option>
-            <option value="มิถุนายน 2569">มิถุนายน 2569</option>
-            <option value="กรกฎาคม 2569">กรกฎาคม 2569</option>
-            <option value="สิงหาคม 2569">สิงหาคม 2569</option>
           </select>
         </div>
         <div>
@@ -415,9 +416,21 @@ function getTypeClass(wt) {
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('update-date').textContent = 'อัปเดต: ' + new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});
+  populateImportMonths();
   loadFromStorage();
   activateMonth(currentMonthKey);
 });
+
+// ปีงบประมาณ N = ตุลาคม (N-1) ถึง กันยายน N
+const FY_MONTHS = ['ตุลาคม','พฤศจิกายน','ธันวาคม','มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน'];
+function populateImportMonths() {
+  const fy = parseInt(document.getElementById('import-fy').value, 10);
+  const opts = FY_MONTHS.map((m, i) => {
+    const label = `${m} ${i < 3 ? fy - 1 : fy}`;
+    return `<option value="${label}">${label}</option>`;
+  });
+  document.getElementById('import-month').innerHTML = '<option value="">— เลือกเดือนภาษี —</option>' + opts.join('');
+}
 
 function loadFromStorage() {
   try {
