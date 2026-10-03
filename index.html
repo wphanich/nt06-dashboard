@@ -782,7 +782,7 @@ function previewImport() {
           const wtVP=row[0];
           if(!wtVP||typeof wtVP!=='string')continue;
           // Skip header/total rows
-          try{parseFloat(wtVP);continue;}catch{}
+          if(wtVP.trim()!==''&&!isNaN(Number(wtVP.trim())))continue;
           const skipVals=['','nan','ประเภทงาน/ข้อมูล (วผ)','เดือนภาษี','เดือนปีภาษี','ผลรวมทั้งหมด','ส่วน นต'];
           if(skipVals.includes(wtVP.trim()))continue;
           if(/^\d{4,5}$/.test(wtVP.trim()))continue;
